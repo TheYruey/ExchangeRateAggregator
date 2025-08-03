@@ -2,25 +2,29 @@
 
 namespace Application;
 
+// Clase que representa un servicio de intercambio de divisas
 public class ExchangeService(IEnumerable<IExchangeRateProvider> providers)
 {
-    // Usamos IEnumerable para que el sistema de DI pueda inyectar todos los proveedores registrados
+    // Campo privado que almacena una colección de proveedores de tasas de cambio
     private readonly IEnumerable<IExchangeRateProvider> _providers = providers;
 
+    // Método asíncrono que obtiene la mejor oferta de intercambio según una solicitud
     public async Task<Offer?> GetBestOfferAsync(ExchangeRequest request, CancellationToken cancellationToken)
     {
-        // Creamos una lista de tareas, una por cada proveedor
+        // Se crean tareas para obtener ofertas de todos los proveedores
         var tasks = _providers.Select(p => p.GetOfferAsync(request, cancellationToken)).ToList();
-        
-        // Ejecutamos todas las tareas en paralelo y esperamos a que terminen [cite: 18]
+
+        // Espera a que todas las tareas se completen y obtiene los resultados
         var results = await Task.WhenAll(tasks);
 
-        // Filtramos las ofertas válidas y las ordenamos para encontrar la mejor [cite: 18]
+        // Filtra las ofertas no nulas, las ordena por el monto convertido en orden descendente
+        // y selecciona la mejor oferta (la primera en el orden)
         var bestOffer = results
             .Where(offer => offer is not null)
-            .OrderByDescending(offer => offer.ConvertedAmount)
+            .OrderByDescending(offer => offer!.ConvertedAmount)
             .FirstOrDefault();
-            
+
+        // Devuelve la mejor oferta encontrada o null si no hay ofertas válidas
         return bestOffer;
     }
 }
