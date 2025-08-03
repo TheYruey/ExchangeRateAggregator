@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "r6w2iWKd87s=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\ydavk\\Desktop\\ExchangeRateAggregator\\src\\Presentation\\Presentation.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ydavk\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\9.0.7\\microsoft.extensions.dependencyinjection.9.0.7.nupkg.sha512",
+    "C:\\Users\\ydavk\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.7\\microsoft.extensions.dependencyinjection.abstractions.9.0.7.nupkg.sha512"
+  ],
+  "logs": []
+}
