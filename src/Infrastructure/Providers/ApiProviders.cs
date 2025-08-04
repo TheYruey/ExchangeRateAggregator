@@ -1,45 +1,35 @@
-﻿// src/Infrastructure/ApiProviders.cs
+﻿namespace Infrastructure.Providers; // <-- Actualizado
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Xml.Linq;
-using Application; // Para poder usar IExchangeRateProvider
-using Domain;
+using Domain.Entities;
+using Domain.Interfaces;
 
-namespace Infrastructure;
-
-// Se usa una clase base para evitar repetir la inyección de HttpClient y el logger
-public abstract class BaseProvider
+public abstract class BaseProvider(HttpClient httpClient)
 {
-    protected readonly HttpClient HttpClient;
-    // En una app real, aquí se inyectaría un ILogger
-    protected BaseProvider(HttpClient httpClient) => HttpClient = httpClient;
+    protected readonly HttpClient HttpClient = httpClient;
 }
 
-// Adaptador para la API 1 
-public class Api1Provider(HttpClient client) : BaseProvider(client), IExchangeRateProvider
-{
+public class Api1Provider(HttpClient client) : BaseProvider(client), IExchangeRateProvider {
     public async Task<Offer?> GetOfferAsync(ExchangeRequest request, CancellationToken ct)
     {
         var payload = new { from = request.SourceCurrency, to = request.TargetCurrency, value = request.Amount };
         try
         {
             var response = await HttpClient.PostAsJsonAsync("api1/rate", payload, ct);
-            response.EnsureSuccessStatusCode(); // Lanza excepción si no es 2xx
+            response.EnsureSuccessStatusCode();
             var data = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
             var rate = data.GetProperty("rate").GetDecimal();
             return new Offer("API1_JSON", request.Amount * rate);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error en API1: {ex.Message}"); // Logging
+            Console.WriteLine($"Error en API1: {ex.Message}");
             return null;
         }
     }
 }
-
-// Adaptador para la API 2 
-public class Api2Provider(HttpClient client) : BaseProvider(client), IExchangeRateProvider
-{
+public class Api2Provider(HttpClient client) : BaseProvider(client), IExchangeRateProvider {
     public async Task<Offer?> GetOfferAsync(ExchangeRequest request, CancellationToken ct)
     {
         var xmlPayload = $"<XML><From>{request.SourceCurrency}</From><To>{request.TargetCurrency}</To><Amount>{request.Amount}</Amount></XML>";
@@ -50,7 +40,9 @@ public class Api2Provider(HttpClient client) : BaseProvider(client), IExchangeRa
             response.EnsureSuccessStatusCode();
             var xmlResponse = await response.Content.ReadAsStringAsync(ct);
             var doc = XDocument.Parse(xmlResponse);
-            var result = decimal.Parse(doc.Root.Element("Result").Value);
+            var resultElement = doc.Root?.Element("Result");
+            if (resultElement == null) return null; // <-- Corrección de Warning
+            var result = decimal.Parse(resultElement.Value);
             return new Offer("API2_XML", result);
         }
         catch (Exception ex)
@@ -60,17 +52,10 @@ public class Api2Provider(HttpClient client) : BaseProvider(client), IExchangeRa
         }
     }
 }
-
-// Adaptador para la API 3 
-public class Api3Provider(HttpClient client) : BaseProvider(client), IExchangeRateProvider
-{
-     public async Task<Offer?> GetOfferAsync(ExchangeRequest request, CancellationToken ct)
+public class Api3Provider(HttpClient client) : BaseProvider(client), IExchangeRateProvider {
+    public async Task<Offer?> GetOfferAsync(ExchangeRequest request, CancellationToken ct)
     {
-        var payload = new { exchange = new {
-            sourceCurrency = request.SourceCurrency,
-            targetCurrency = request.TargetCurrency,
-            quantity = request.Amount
-        }};
+        var payload = new { exchange = new { sourceCurrency = request.SourceCurrency, targetCurrency = request.TargetCurrency, quantity = request.Amount }};
         try
         {
             var response = await HttpClient.PostAsJsonAsync("api3/convert", payload, ct);

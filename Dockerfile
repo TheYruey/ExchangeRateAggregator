@@ -21,12 +21,13 @@ RUN dotnet publish -c Release -o /app/publish
 
 
 # ---- Etapa 2: Ejecución (Final) ----
-# Usamos la imagen de "runtime" de .NET 9.0
-FROM mcr.microsoft.com/dotnet/runtime:9.0 AS final
+# Usar la imagen optimizada para ASP.NET Core
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
-
-# Copiar solo la aplicación compilada
 COPY --from=build /app/publish .
 
-# Definir el comando que se ejecutará
+# Exponer el puerto 8080 del contenedor
+EXPOSE 8080
+
+# Definir el comando que se ejecutará cuando el contenedor inicie
 ENTRYPOINT ["dotnet", "Presentation.dll"]

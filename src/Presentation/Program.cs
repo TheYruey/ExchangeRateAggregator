@@ -1,39 +1,38 @@
-﻿// src/Presentation/Program.cs
-using Microsoft.Extensions.DependencyInjection;
-using Domain;
-using Application;
-using Infrastructure;
+using Application.Services;
+using Domain.Interfaces;
+using Infrastructure.Providers;
 
-// 1. Configurar la inyección de dependencias
-var services = new ServiceCollection();
+var builder = WebApplication.CreateBuilder(args);
 
-// Configura un HttpClient para cada proveedor con su URL base
+// --- Configurar Servicios (Inyección de Dependencias) ---
+
+// 1. Añadir servicios de API y Swagger
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// 2. Configurar los proveedores de tasas de cambio
 const string baseUrl = "http://host.docker.internal:5231/";
-services.AddHttpClient<IExchangeRateProvider, Api1Provider>(client => client.BaseAddress = new Uri(baseUrl));
-services.AddHttpClient<IExchangeRateProvider, Api2Provider>(client => client.BaseAddress = new Uri(baseUrl));
-services.AddHttpClient<IExchangeRateProvider, Api3Provider>(client => client.BaseAddress = new Uri(baseUrl));
+builder.Services.AddHttpClient<IExchangeRateProvider, Api1Provider>(client => client.BaseAddress = new Uri(baseUrl));
+builder.Services.AddHttpClient<IExchangeRateProvider, Api2Provider>(client => client.BaseAddress = new Uri(baseUrl));
+builder.Services.AddHttpClient<IExchangeRateProvider, Api3Provider>(client => client.BaseAddress = new Uri(baseUrl));
 
-// Registra el servicio de aplicación
-services.AddScoped<ExchangeService>();
+// 3. Registrar el servicio de aplicación
+builder.Services.AddScoped<ExchangeService>();
 
-var serviceProvider = services.BuildServiceProvider();
 
-// 2. Ejecutar la lógica de la aplicación
-var exchangeService = serviceProvider.GetRequiredService<ExchangeService>();
-var request = new ExchangeRequest("USD", "DOP", 100m);
+var app = builder.Build();
 
-Console.WriteLine($"Buscando la mejor tasa para convertir {request.Amount} {request.SourceCurrency} a {request.TargetCurrency}...");
+// --- Configurar el Pipeline de HTTP ---
 
-var bestOffer = await exchangeService.GetBestOfferAsync(request, CancellationToken.None);
-
-// 3. Mostrar el resultado
-if (bestOffer != null)
+if (app.Environment.IsDevelopment())
 {
-    Console.WriteLine("\n--- Mejor Oferta Encontrada ---");
-    Console.WriteLine($"Proveedor: {bestOffer.ProviderName}");
-    Console.WriteLine($"Monto Convertido: {bestOffer.ConvertedAmount:F2} {request.TargetCurrency}");
+    app.UseSwagger();
+    app.UseSwaggerUI(); // Habilita la UI interactiva de Swagger
 }
-else
-{
-    Console.WriteLine("No se pudieron obtener ofertas de ningún proveedor.");
-}
+
+// app.UseHttpsRedirection(); // <-- Comenta o elimina esta línea
+
+app.MapControllers(); // Mapea los endpoints de los controllers
+
+app.Run();
