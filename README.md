@@ -1,6 +1,6 @@
 ## Agregador de Tasas de Cambio (Reto Técnico)
 
-Este proyecto es una solución al reto técnico propuesto, cuyo objetivo es desarrollar un servicio de backend que consulta múltiples APIs de tasas de cambio para encontrar y devolver la mejor oferta para un cliente.
+Este proyecto es una solución al reto técnico Comparing Exchange Rate Offers for Banking Clients, cuyo objetivo es desarrollar un servicio de backend que consulta múltiples APIs de tasas de cambio para encontrar y devolver la mejor oferta para un cliente.
 
 El sistema está diseñado como una **API Web RESTful** robusta, eficiente y escalable, siguiendo las mejores prácticas de la industria como la Arquitectura Limpia y los principios SOLID.
 
